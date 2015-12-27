@@ -6,7 +6,6 @@ import keyword
 import os
 import re
 
-from django import forms
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -20,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from diffapp.models import CommitSequence, Diff, LineComment
 from diffapp.diffimport import make_commit_sequence
+from diffapp.forms import RegisterForm
 
 
 def index(request):
@@ -33,22 +33,6 @@ def index(request):
 
 
 def register(request):
-    class RegisterForm(forms.Form):
-        username = forms.CharField(u'Login')
-        password = forms.CharField(u'Password', widget=forms.PasswordInput)
-        repeat_password = forms.CharField(u'Password (again)', widget=forms.PasswordInput)
-
-        def clean(self):
-            cleaned_data = super(RegisterForm, self).clean()
-            username = cleaned_data.get('username')
-            if username and User.objects.filter(username=username).exists():
-                raise forms.ValidationError('User "%s" is already registered' % username)
-            pw = cleaned_data.get('password')
-            pw2 = cleaned_data.get('repeat_password')
-            if pw and pw2 and pw != pw2:
-                raise forms.ValidationError('Passwords do not match')
-            return cleaned_data
-
     form = RegisterForm(request.POST or None)
     if form.is_valid():
         args = dict(
@@ -311,8 +295,8 @@ def export_comments_redmine(request, commit_sequence_id):
         line_index_0 = int(comment.first_line_anchor.split('-')[-1][4:], 16)
         line_index_1 = int(comment.last_line_anchor.split('-')[-1][4:], 16)
 
-        #if (line_index_0, line_index_1) in already_commented_line_spans:
-        #    continue
+        # if (line_index_0, line_index_1) in already_commented_line_spans:
+        #     continue
         already_commented_line_spans.add((line_index_0, line_index_1))
 
         lines = comment.diff.lines[line_index_0: line_index_1 + 1]
