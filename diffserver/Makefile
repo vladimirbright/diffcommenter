@@ -3,14 +3,15 @@
 export PYTHONPATH:=$(shell pwd)
 export DJANGO_SETTINGS_MODULE:=settings_local
 
-PORT=8200
+HOST?=127.0.0.1
+PORT?=8200
 ERR_LOG=ds.errors.log
 PIDFILE=ds.pid
 
 
 
 runserver: collectstatic
-	python manage.py runserver $(PORT)
+	python manage.py runserver $(HOST):$(PORT)
 
 stop:
 	@if [ -f $(PIDFILE) ]; \
@@ -22,7 +23,7 @@ stop:
 	fi;
 
 run: stop collectstatic
-	gunicorn --pid=$(PIDFILE) --error-log=$(ERR_LOG) --log-level=debug -b 128.0.0.1:$(PORT) wsgi:application --daemon
+	gunicorn --pid=$(PIDFILE) --error-log=$(ERR_LOG) --log-level=debug -b $(HOST):$(PORT) wsgi:application --daemon
 
 syncdb:
 	python manage.py syncdb --noinput
