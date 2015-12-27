@@ -57,7 +57,7 @@
     <textarea id="exported_comments"></textarea>
 </div>
 
-{% if commit_sequence.commits.all %}
+{% if commit_sequence.commits.exists %}
 <h2>Commits</h2>
 <ol>
     {% for commit in commit_sequence.commits.all %}

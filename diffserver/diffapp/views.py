@@ -39,7 +39,6 @@ def register(request):
             username=form.cleaned_data['username'],
             password=form.cleaned_data['password']
         )
-
         User.objects.create_user(**args)
         auth_user = authenticate(**args)
         login(request, auth_user)
@@ -60,7 +59,7 @@ def show_commit_sequence(request, object_id):
             pk=object_id
         ).prefetch_related(
             'commits', 'commits__diffs', 'commits__diffs__comments'
-        )[:1][0]
+        )[0]
     except IndexError:
         return HttpResponse(code=404)
 
