@@ -1,0 +1,51 @@
+{% load difftags %}
+<h4 class="diff"><span>{{ diff.filename }}</span>
+    <a class="anchor-thingy jumps-to-anchor diff-anchor" id="{{ anchor }}}" href="#{{ anchor }}">¶</a>
+</h4>
+<pre>{% for l in diff.head %}
+{{ l }}{% endfor %}</pre>
+<table
+    data-diff-pk="{{ diff.pk }}"
+    width="100%" cellspacing="0" class="difftable">
+    <tr>
+        <th width="37">Older#</th>
+        <th width="37">Newer#</th>
+        <th>Line</th>
+    </tr>
+    {% for line_i, line in enumerated_lines %}
+    <tr id="{{ anchor }}">
+        {% if line.type == 'skip' %}
+            <td class="lno" colspan="2" width="center">...</td>
+            <td class="line" style="color: blue">
+                <pre>{{ line|fmt_line }}</pre>
+            </td>
+        {% elif line.type == 'same' %}
+            <td class="lno">
+                <a {anchor_insides}>{{ line.old_li }}</a>
+            </td>
+            <td class="lno">
+                <a {anchor_insides}>{{ line.new_li }}</a>
+            </td>
+            <td class="line" style="{this_row_top_border}">
+                <pre>{{ line|fmt_line }}</pre>
+            </td>
+        {% elif line.type == 'old' %}
+            <td class="lno">
+                <a {anchor_insides}>{{ line.old_li }}</a>
+            </td>
+            <td class="lno">&nbsp;</td>
+            <td class="line" style="background-color: #FFDDDD; {this_row_top_border}">
+                <pre>{{ line|fmt_line }}</pre>
+            </td>
+        {% elif line.type == 'new' %}
+            <td class="lno">&nbsp;</td>
+            <td class="lno">
+                <a {anchor_insides}>{{ line.new_li }}</a>
+            </td>
+           <td class="line" style="background-color: #DDFFDD; {this_row_top_border}">
+               <pre>{{ line|fmt_line }}</pre>
+           </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>

@@ -53,17 +53,15 @@ def register(request):
 def show_commit_sequence(request, object_id):
     """ TODO отрефакторить, вынести в шаблоны и пр.
     """
+    commit_sequence = get_object_or_404(
+        CommitSequence,
+        pk=object_id
+    )
     outfile = StringIO()
-    try:
-        commit_sequence = CommitSequence.objects.filter(
-            pk=object_id
-        ).prefetch_related(
-            'commits', 'commits__diffs', 'commits__diffs__comments'
-        )[0]
-    except IndexError:
-        return HttpResponse(code=404)
 
-    def diff_to_html(self, commit_number, number_in_commit):
+    from django.template import Template, Context
+
+    def _diff_to_html(self, commit_number, number_in_commit):
         heading = self.filename
         print >>outfile, '<h4 class="diff"><span>', heading, '</span>'
         anchor = self.make_anchor(number_in_commit)
@@ -75,41 +73,31 @@ def show_commit_sequence(request, object_id):
             <th width="37">Newer#</th>
             <th>Line</th>
         </tr>'''.format(**locals())
-
         streak = ''
         border_colors_by_type = {
             'old': 'red',
             'new': 'green',
         }
-
         BORDER_PATTERN = 'border-top: solid 1px %s'
-
         python_kw_set = set(keyword.kwlist)
-
         comments_by_last_line_anchor = defaultdict(list)
         for comment in self.comments.all().order_by('id'):
             comments_by_last_line_anchor[comment.last_line_anchor].append(comment)
-
         for line_i, line in enumerate(self.lines):
             this_row_top_border = ''
-
             if streak:
                 if line.type != streak:
                     this_row_top_border = BORDER_PATTERN % border_colors_by_type[streak]
                     streak = None
-
             if not streak and line.type in ('new', 'old'):
                 streak = line.type
                 this_row_top_border = BORDER_PATTERN % border_colors_by_type[streak]
             fmt_line = line.line.replace('&', '&amp;').replace('<', '&lt;').replace(' ', '&nbsp;')
             fmt_line = fmt_line or '&nbsp;'
-
             for kword in python_kw_set:
                 fmt_line = re.sub(r'\b%s\b' % kword, '<b>%s</b>' % kword, fmt_line)
-
             anchor = 'commit%s-file%s-line%s' % (commit_number, number_in_commit, hex(line_i))
             anchor_insides = 'class="anchor-thingy jumps-to-anchor line-anchor" href="#{anchor}"'.format(**locals())
-
             if line.type == 'skip':
                 row = u'''<td class="lno" colspan="2" width="center">...</td>'''\
                       u'''<td class="line" style="{this_row_top_border}; color: blue "><pre>{fmt_line}</pre>'''.format(**locals())
@@ -155,8 +143,10 @@ def show_commit_sequence(request, object_id):
             print >>outfile, u'<li><a class="anchor-thingy jumps-to-anchor toc_link" href="#{anchor}">{diff.filename}</a></li>'.format(**locals())
         print >>outfile, u'</ul>'
 
+        templ = Template("{% load difftags %}{% diff_to_html d cn nc %}")
         for i, diff in enumerate(self.diffs.all()):
-            diff_to_html(diff, self.pk, i)
+            res = templ.render(Context(dict(d=diff, cn=self.pk, nc=i)))
+            print >>outfile, res
 
     def sequence_to_html(self):
         for commit in self.commits.all():
